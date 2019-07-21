@@ -11,6 +11,7 @@ import com.cxy.speedkill.utils.UUIDUtil;
 import com.cxy.speedkill.vo.LoginVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
@@ -23,7 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 @Service
 public class SpeedKillService {
 
-    private static final String COOKIE_NAME_TOKEN = "taken";
+    public static final String COOKIE_NAME_TOKEN = "taken";
 
     @Autowired
     SpeedKillDao speedKillDao;
@@ -71,5 +72,19 @@ public class SpeedKillService {
         cookie.setMaxAge(SpeedKillUserKey.token.expireSeconds());
         cookie.setPath("/");
         response.addCookie(cookie);
+    }
+
+    public SpeedKillUser getToken(HttpServletResponse response, String token){
+        if(StringUtils.isEmpty(token)){
+            return null;
+        }
+        SpeedKillUser speedKillUser = redisService.get(SpeedKillUserKey.token,token,SpeedKillUser.class);
+
+        //延长有效期
+        if(speedKillUser!=null){
+            addCookie(response,token,speedKillUser);
+        }
+
+        return speedKillUser;
     }
 }
