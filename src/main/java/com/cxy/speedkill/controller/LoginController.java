@@ -1,18 +1,13 @@
 package com.cxy.speedkill.controller;
 
-import com.cxy.speedkill.common.Result;
 import com.cxy.speedkill.common.ResultGeekQ;
-import com.cxy.speedkill.common.ResultStatus;
-import com.cxy.speedkill.domain.SpeedKillUser;
-import com.cxy.speedkill.service.SpeedKillService;
-import com.cxy.speedkill.utils.ValidatorUtil;
+import com.cxy.speedkill.service.SpeedKillUserService;
 import com.cxy.speedkill.vo.LoginVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -29,7 +24,7 @@ public class LoginController {
     private static Logger logger = LoggerFactory.getLogger(LoginController.class);
 
     @Autowired
-    SpeedKillService speedKillService;
+    SpeedKillUserService speedKillUserService;
 
     @RequestMapping("/toLogin")
     public String toLogin(LoginVo loginVo, Model model){
@@ -48,7 +43,7 @@ public class LoginController {
     public ResultGeekQ<Boolean> doLogin(HttpServletResponse response, LoginVo loginVo){
         logger.info(loginVo.toString());
 
-        Boolean result = speedKillService.login(response,loginVo);
+        Boolean result = speedKillUserService.login(response,loginVo);
         return ResultGeekQ.build("登陆成功");
     }
 

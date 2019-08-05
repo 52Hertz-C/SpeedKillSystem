@@ -29,9 +29,9 @@ public class GoodsService {
     }
 
     public boolean reduceStock(GoodsVo goods) {
-        SpeedKillGoods g = new SpeedKillGoods();
-        g.setGoodsId(goods.getId());
-        int ret = goodsDao.reduceStock(g);
+        SpeedKillGoods speedKillGoods = new SpeedKillGoods();
+        speedKillGoods.setGoodsId(goods.getId());
+        int ret = goodsDao.reduceStock(speedKillGoods);
         return ret > 0;
     }
 

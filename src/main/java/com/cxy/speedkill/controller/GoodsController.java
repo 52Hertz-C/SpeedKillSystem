@@ -50,17 +50,17 @@ public class GoodsController {
         return "goods/goods_list";
     }
 
-    @RequestMapping(value="/toGoodsDetails/{goodsId}",produces="text/html")
-    @ResponseBody
-    public String detail2(HttpServletRequest request, HttpServletResponse response, Model model, SpeedKillUser speedKillUser,
+    @RequestMapping(value="/toGoodsDetails/{goodsId}")
+//    @ResponseBody
+    public String toGoodsDetails(HttpServletRequest request, HttpServletResponse response, Model model, SpeedKillUser speedKillUser,
                           @PathVariable("goodsId")long goodsId) {
         model.addAttribute("user", speedKillUser);
 
         //取缓存
-        String html = redisService.get(GoodsKey.getGoodsDetail, ""+goodsId, String.class);
-        if(!StringUtils.isEmpty(html)) {
-            return html;
-        }
+//        String html = redisService.get(GoodsKey.getGoodsDetail, ""+goodsId, String.class);
+////        if(!StringUtils.isEmpty(html)) {
+////            return html;
+////        }
         //手动渲染
         GoodsVo goods = goodsService.getGoodsVoByGoodsId(goodsId);
         model.addAttribute("goods", goods);
@@ -83,14 +83,14 @@ public class GoodsController {
         }
         model.addAttribute("miaoshaStatus", miaoshaStatus);
         model.addAttribute("remainSeconds", remainSeconds);
-//        return "goods_detail";
+        return "goods/goods_detail";
 
-        SpringWebContext ctx = new SpringWebContext(request,response,
-                request.getServletContext(),request.getLocale(), model.asMap(), applicationContext );
-        html = viewResolver.getTemplateEngine().process("goods_detail", ctx);
-        if(!StringUtils.isEmpty(html)) {
-            redisService.set(GoodsKey.getGoodsDetail, ""+goodsId, html);
-        }
-        return html;
+//        SpringWebContext ctx = new SpringWebContext(request,response,
+//                request.getServletContext(),request.getLocale(), model.asMap(), applicationContext );
+//        html = viewResolver.getTemplateEngine().process("goods/goods_detail", ctx);
+//        if(!StringUtils.isEmpty(html)) {
+//            redisService.set(GoodsKey.getGoodsDetail, ""+goodsId, html);
+//        }
+//        return html;
     }
 }
