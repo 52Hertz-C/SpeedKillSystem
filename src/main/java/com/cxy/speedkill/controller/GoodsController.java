@@ -45,8 +45,13 @@ public class GoodsController {
     @RequestMapping("/toGoods")
     public String toGoods(Model model, SpeedKillUser speedKillUser){
         List<GoodsVo> goodsList = goodsService.listGoodsVo();
+        if (speedKillUser!=null){
+            model.addAttribute("user",speedKillUser );
+        }else{
+            model.addAttribute("user",new SpeedKillUser() );
+        }
         model.addAttribute("goodsList",goodsList);
-        model.addAttribute("user",speedKillUser);
+//        model.addAttribute("user",speedKillUser);
         return "goods/goods_list";
     }
 
