@@ -1,20 +1,33 @@
 package com.cxy.speedkill.service;
 
+import com.cxy.speedkill.common.MessageStatus;
 import com.cxy.speedkill.common.ResultStatus;
+import com.cxy.speedkill.common.SnowflakeIdWorker;
 import com.cxy.speedkill.dao.SpeedKillDao;
 import com.cxy.speedkill.domain.SpeedKillUser;
 import com.cxy.speedkill.exception.GlobalException;
+import com.cxy.speedkill.rabbitmq.MQSender;
 import com.cxy.speedkill.redis.RedisService;
+import com.cxy.speedkill.redis.SpeedKillKey;
 import com.cxy.speedkill.redis.SpeedKillUserKey;
 import com.cxy.speedkill.utils.MD5Util;
 import com.cxy.speedkill.utils.UUIDUtil;
 import com.cxy.speedkill.vo.LoginVo;
+import com.cxy.speedkill.vo.SpeedKillMessageVo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.Date;
+import java.util.Random;
 
 /**
  * @Auther: cxy
@@ -23,6 +36,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 @Service
 public class SpeedKillUserService {
+    private static final Logger logger = LoggerFactory.getLogger(SpeedKillUserService.class);
 
     public static final String COOKIE_NAME_TOKEN = "taken";
 
@@ -31,6 +45,9 @@ public class SpeedKillUserService {
 
     @Autowired
     RedisService redisService;
+
+    @Autowired
+    private MQSender sender ;
 
     public SpeedKillUser getPassword(long mobile){
         SpeedKillUser speedKillUser = speedKillDao.getPassword(mobile);
@@ -86,5 +103,116 @@ public class SpeedKillUserService {
         }
 
         return speedKillUser;
+    }
+
+    public BufferedImage createVerifyCodeRegister() {
+        int width = 100;
+        int height = 32;
+        //create the image
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics g = image.getGraphics();
+        // set the background color
+        g.setColor(new Color(0xDCDCDC));
+        g.fillRect(0, 0, width, height);
+        // draw the border
+        g.setColor(Color.black);
+        g.drawRect(0, 0, width - 1, height - 1);
+        // create a random instance to generate the codes
+        Random rdm = new Random();
+        // make some confusion
+        for (int i = 0; i < 50; i++) {
+            int x = rdm.nextInt(width);
+            int y = rdm.nextInt(height);
+            g.drawOval(x, y, 0, 0);
+        }
+        // generate a random code
+        String verifyCode = generateVerifyCode(rdm);
+        g.setColor(new Color(0, 100, 0));
+        g.setFont(new Font("Candara", Font.BOLD, 24));
+        g.drawString(verifyCode, 8, 24);
+        g.dispose();
+        //把验证码存到redis中
+        int rnd = calc(verifyCode);
+        redisService.set(SpeedKillKey.getMiaoshaVerifyCodeRegister,"regitser",rnd);
+        //输出图片
+        return image;
+    }
+
+    private static int calc(String exp) {
+        try {
+            ScriptEngineManager manager = new ScriptEngineManager();
+            ScriptEngine engine = manager.getEngineByName("JavaScript");
+            Integer catch1 = (Integer)engine.eval(exp);
+            return catch1.intValue();
+        }catch(Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    private static char[] ops = new char[] {'+', '-', '*'};
+    /**
+     * + - *
+     * */
+    private String generateVerifyCode(Random rdm) {
+        int num1 = rdm.nextInt(10);
+        int num2 = rdm.nextInt(10);
+        int num3 = rdm.nextInt(10);
+        char op1 = ops[rdm.nextInt(3)];
+        char op2 = ops[rdm.nextInt(3)];
+        String exp = ""+ num1 + op1 + num2 + op2 + num3;
+        return exp;
+    }
+
+    /**
+     * 注册时用的验证码
+     * @param verifyCode
+     * @return
+     */
+    public boolean checkVerifyCodeRegister(int verifyCode) {
+        Integer codeOld = redisService.get(SpeedKillKey.getMiaoshaVerifyCodeRegister,"regitser", Integer.class);
+        if(codeOld == null || codeOld - verifyCode != 0 ) {
+            return false;
+        }
+        redisService.delete(SpeedKillKey.getMiaoshaVerifyCode, "regitser");
+        return true;
+    }
+
+
+    public boolean register(HttpServletResponse response , String userName , String passWord , String salt) {
+        SpeedKillUser miaoShaUser =  new SpeedKillUser();
+        miaoShaUser.setNickname(userName);
+        String DBPassWord =  MD5Util.formPassToDBPass(passWord , salt);
+        miaoShaUser.setPassword(DBPassWord);
+        miaoShaUser.setRegisterDate(new Date());
+        miaoShaUser.setSalt(salt);
+        miaoShaUser.setNickname(userName);
+        try {
+            speedKillDao.insertMiaoShaUser(miaoShaUser);
+            SpeedKillUser user = speedKillDao.getByNickname(miaoShaUser.getNickname());
+            if(user == null){
+                return false;
+            }
+
+            SpeedKillMessageVo vo = new SpeedKillMessageVo();
+            vo.setContent("尊敬的用户你好，你已经成功注册！");
+            vo.setCreateTime(new Date());
+            vo.setMessageId(SnowflakeIdWorker.getOrderId(0,0));
+            vo.setSendType(0);
+            vo.setStatus(0);
+            vo.setMessageType(MessageStatus.messageType.system_message.ordinal());
+            vo.setUserId(miaoShaUser.getId());
+            vo.setMessageHead(MessageStatus.ContentEnum.system_message_register_head.getMessage());
+            sender.sendRegisterMessage(vo);
+
+
+            //生成cookie 将session返回游览器 分布式session
+            String token= UUIDUtil.uuid();
+            addCookie(response, token, user);
+        } catch (Exception e) {
+            logger.error("注册失败",e);
+            return false;
+        }
+        return true;
     }
 }
