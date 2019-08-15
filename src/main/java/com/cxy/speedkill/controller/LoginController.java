@@ -34,18 +34,22 @@ public class LoginController {
     @Autowired
     SpeedKillUserService speedKillUserService;
 
+    /**
+     * 跳转至登录界面
+     * @param model
+     * @return
+     */
     @RequestMapping("/toLogin")
-    public String toLogin(LoginVo loginVo, Model model){
-//        logger.info(loginVo.toString());
-//        //未完成
-//        RedisLua.vistorCount(COUNTLOGIN);
-//        String count = RedisLua.getVistorCount(COUNTLOGIN).toString();
-//        logger.info("访问网站的次数为:{}",count);
-//        model.addAttribute("count",count);
-        model.addAttribute("count",1);
+    public String toLogin(Model model){
         return "login/index";
     }
 
+    /**
+     * 登陆
+     * @param response
+     * @param loginVo
+     * @return
+     */
     @RequestMapping("/doLogin")
     @ResponseBody
     public ResultGeekQ<Boolean> doLogin(HttpServletResponse response, LoginVo loginVo){
@@ -55,12 +59,22 @@ public class LoginController {
         return ResultGeekQ.build("登陆成功");
     }
 
+    /**
+     * 跳转至注册界面
+     * @param model
+     * @return
+     */
     @RequestMapping("/register")
     public String toRegister(Model model){
         return "login/register";
     }
 
 
+    /**
+     * 生成验证码
+     * @param response
+     * @return
+     */
     @RequestMapping(value = "/verifyCodeRegister", method = RequestMethod.GET)
     @ResponseBody
     public ResultGeekQ<String> getMiaoshaVerifyCod(HttpServletResponse response
@@ -80,6 +94,12 @@ public class LoginController {
         }
     }
 
+    /**
+     * 注册
+     * @param request
+     * @param response
+     * @return
+     */
     @RequestMapping("doRegister")
     @ResponseBody
     public ResultGeekQ<String> register(HttpServletRequest request, HttpServletResponse response ){
@@ -98,7 +118,7 @@ public class LoginController {
             return result;
 
         }
-        boolean registerInfo  = speedKillUserService.register(response , mobile,password,salt);
+        boolean registerInfo  = speedKillUserService.register(response, mobile, password, salt);
         if(!registerInfo){
             result.withError(ResultStatus.RESIGETER_FAIL.getCode(),ResultStatus.RESIGETER_FAIL.getMessage());
             return result;

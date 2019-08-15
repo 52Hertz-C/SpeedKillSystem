@@ -57,7 +57,7 @@ public class SpeedKillController {
         int stockCount = goodsVo.getStockCount();
         if(stockCount<=0){
             model.addAttribute("errMsg",ResultStatus.MIAO_SHA_OVER.getMessage());
-            return "speedKill/speedKill_fail";
+            return "kill/speedKill_fail";
         }
 
         //判断是否重复秒杀

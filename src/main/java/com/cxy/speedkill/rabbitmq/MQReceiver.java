@@ -68,5 +68,5 @@ public class MQReceiver {
 		channel.basicAck(message.getMessageProperties().getDeliveryTag(), true);
 		SpeedKillMessageVo msm  = RedisService.stringToBean(messRegister, SpeedKillMessageVo.class);
 		messageService.insertMs(msm);
-		}
+	}
 }

@@ -32,7 +32,7 @@ import java.util.Random;
 /**
  * @Auther: cxy
  * @Date: 2019/7/19
- * @Description:
+ * @Description: 用户登陆服务
  */
 @Service
 public class SpeedKillUserService {
@@ -49,11 +49,22 @@ public class SpeedKillUserService {
     @Autowired
     private MQSender sender ;
 
+    /**
+     * 根据手机号获取密码
+     * @param mobile
+     * @return
+     */
     public SpeedKillUser getPassword(long mobile){
         SpeedKillUser speedKillUser = speedKillDao.getPassword(mobile);
         return speedKillUser;
     }
 
+    /**
+     * 登陆
+     * @param response
+     * @param loginVo
+     * @return
+     */
     public Boolean login(HttpServletResponse response,LoginVo loginVo){
         if(loginVo==null){
             throw new GlobalException(ResultStatus.SYSTEM_ERROR);
@@ -91,6 +102,12 @@ public class SpeedKillUserService {
         response.addCookie(cookie);
     }
 
+    /**
+     * 获取token
+     * @param response
+     * @param token
+     * @return
+     */
     public SpeedKillUser getToken(HttpServletResponse response, String token){
         if(StringUtils.isEmpty(token)){
             return null;
@@ -105,9 +122,13 @@ public class SpeedKillUserService {
         return speedKillUser;
     }
 
+    /**
+     * 生成验证码
+     * @return
+     */
     public BufferedImage createVerifyCodeRegister() {
         int width = 100;
-        int height = 32;
+        int height = 40;
         //create the image
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics g = image.getGraphics();
@@ -138,6 +159,11 @@ public class SpeedKillUserService {
         return image;
     }
 
+    /**
+     * 对脚本语言处理
+     * @param exp
+     * @return
+     */
     private static int calc(String exp) {
         try {
             ScriptEngineManager manager = new ScriptEngineManager();
@@ -150,10 +176,16 @@ public class SpeedKillUserService {
         }
     }
 
-    private static char[] ops = new char[] {'+', '-', '*'};
     /**
      * + - *
-     * */
+     */
+    private static char[] ops = new char[] {'+', '-', '*'};
+
+    /**
+     * 获取验证码内容
+     * @param rdm
+     * @return
+     */
     private String generateVerifyCode(Random rdm) {
         int num1 = rdm.nextInt(10);
         int num2 = rdm.nextInt(10);
@@ -171,25 +203,32 @@ public class SpeedKillUserService {
      */
     public boolean checkVerifyCodeRegister(int verifyCode) {
         Integer codeOld = redisService.get(SpeedKillKey.getMiaoshaVerifyCodeRegister,"regitser", Integer.class);
-        if(codeOld == null || codeOld - verifyCode != 0 ) {
+        if(codeOld == null || codeOld != verifyCode ) {
             return false;
         }
         redisService.delete(SpeedKillKey.getMiaoshaVerifyCode, "regitser");
         return true;
     }
 
-
-    public boolean register(HttpServletResponse response , String userName , String passWord , String salt) {
-        SpeedKillUser miaoShaUser =  new SpeedKillUser();
-        miaoShaUser.setNickname(userName);
-        String DBPassWord =  MD5Util.formPassToDBPass(passWord , salt);
-        miaoShaUser.setPassword(DBPassWord);
-        miaoShaUser.setRegisterDate(new Date());
-        miaoShaUser.setSalt(salt);
-        miaoShaUser.setNickname(userName);
+    /**
+     * 注册
+     * @param response
+     * @param mobile
+     * @param passWord
+     * @param salt
+     * @return
+     */
+    public boolean register(HttpServletResponse response , String mobile , String passWord , String salt) {
+        SpeedKillUser speedKillUser =  new SpeedKillUser();
+        speedKillUser.setId(Long.parseLong(mobile));
+        String DBPassWord =  MD5Util.formPassToDBPass(passWord, salt);
+        speedKillUser.setPassword(DBPassWord);
+        speedKillUser.setRegisterDate(new Date());
+        speedKillUser.setSalt(salt);
+        speedKillUser.setNickname(mobile);
         try {
-            speedKillDao.insertMiaoShaUser(miaoShaUser);
-            SpeedKillUser user = speedKillDao.getByNickname(miaoShaUser.getNickname());
+            speedKillDao.insertMiaoShaUser(speedKillUser);
+            SpeedKillUser user = speedKillDao.getByNickname(speedKillUser.getNickname());
             if(user == null){
                 return false;
             }
@@ -201,10 +240,9 @@ public class SpeedKillUserService {
             vo.setSendType(0);
             vo.setStatus(0);
             vo.setMessageType(MessageStatus.messageType.system_message.ordinal());
-            vo.setUserId(miaoShaUser.getId());
+            vo.setUserId(speedKillUser.getId());
             vo.setMessageHead(MessageStatus.ContentEnum.system_message_register_head.getMessage());
             sender.sendRegisterMessage(vo);
-
 
             //生成cookie 将session返回游览器 分布式session
             String token= UUIDUtil.uuid();
