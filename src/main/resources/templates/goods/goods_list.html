@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <!-- jquery -->
     <script type="text/javascript" th:src="@{/js/jquery.min.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/common.css}" />
     <!-- bootstrap -->
     <link rel="stylesheet" type="text/css" th:href="@{/bootstrap/css/bootstrap.min.css}" />
     <script type="text/javascript" th:src="@{/bootstrap/js/bootstrap.min.js}"></script>
@@ -17,12 +18,13 @@
     <script type="text/javascript" th:src="@{/js/md5.min.js}"></script>
     <!-- common.js -->
     <script type="text/javascript" th:src="@{/js/common.js}"></script>
+    <script type="text/javascript" th:src="@{/seckill/goods/goods_list.js}"></script>
 </head>
 
 <body>
-<div class="panel panel-default">
-    <div class="panel-heading">秒杀商品</div>
-    <div  class="panel-heading">
+<div class="panel panel-default goods_wrap">
+    <div class="goods_head">秒杀系统->商品列表</div>
+    <div  class="goods_head">
         <button onclick="messageRegister()">消息中心</button>
         <input id="userid" th:value="${user.id}"></input>
     </div>　
@@ -39,12 +41,4 @@
     </table>
 </div>
 </body>
-
-<script>
-    function messageRegister() {
-        var userid = $("#userid").val();
-        window.location.href='/message/list?userid='+userid;
-    }
-
-</script>
 </html>

@@ -188,3 +188,14 @@ header{
 	color:#AEEEEE;
 }
 
+
+.goods_wrap{
+		background: url(../img/bg2.jpg) no-repeat center;
+	background-size: 100%;
+}
+
+.goods_head{
+	padding: 10px 15px;
+	border-bottom: 1px solid transparent;
+	font-size: 20px;
+}

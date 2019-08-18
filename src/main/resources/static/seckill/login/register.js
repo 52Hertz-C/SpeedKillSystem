@@ -80,7 +80,7 @@ function register_go() {
     var password = md5(str);
     g_showLoading();
     $.ajax({
-        url: "/user/register",
+        url: "/login/doRegister",
         type: "POST",
         data:{
             mobile:mobile,
@@ -92,7 +92,7 @@ function register_go() {
             layer.closeAll();
             if(data.code == 0){
                 layer.msg("成功");
-                window.location.href="/goods/to_list";
+                window.location.href="/goods/toGoods";
             }else{
                 layer.msg(data.message);
             }
